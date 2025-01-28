@@ -73,7 +73,7 @@ func GenAddrList(conf *GenConf) []Addr {
 	return res
 }
 
-//go:embed static/arial/ARIAL.TTF
+//go:embed arial/ARIAL.TTF
 var ARIAL_TTF_DATA []byte
 
 func CreatePdf(conf *GenConf, addrs []Addr) gopdf.GoPdf {
