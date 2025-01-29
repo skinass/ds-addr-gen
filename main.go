@@ -8,6 +8,7 @@ import (
 	"syscall/js"
 
 	"github.com/creasty/defaults"
+	_ "github.com/shurcooL/go-goon"
 	"github.com/signintech/gopdf"
 	"github.com/skip2/go-qrcode"
 	yaml "gopkg.in/yaml.v3"
@@ -49,7 +50,7 @@ type GenConf struct {
 		QRCodeSize            int    `yaml:"qrcode_size" default:"60"`
 		QRCodeResolution      int    `yaml:"qrcode_resolution" default:"256"`
 		Orientation           string `yaml:"orientation" default:"vertical"`
-		StickerLeftOffset     int    `yaml:"sticker_left_offest" default:"10"`
+		StickerLeftOffset     int    `yaml:"sticker_left_offset" default:"10"`
 		SpaceBetweenQRAndText int    `yaml:"space_between_qr_and_text" default:"20"`
 	}
 }
@@ -89,8 +90,9 @@ func GenAddrList(conf *GenConf) []Addr {
 //go:embed arial/ARIAL.TTF
 var ARIAL_TTF_DATA []byte
 
-func CreatePdf(conf *GenConf, addrs []Addr) gopdf.GoPdf {
+func CreatePdf(conf *GenConf, addrs []Addr) *gopdf.GoPdf {
 	pdf := gopdf.GoPdf{}
+	pdf.SetTransparency(gopdf.Transparency{Alpha: 0})
 
 	var W, H float64 = 842, 595
 	if conf.Render.Orientation == "horizontal" {
@@ -134,7 +136,7 @@ FillStickersOnPages:
 	}
 	fmt.Println("total addresses added to pdf:", cnt)
 
-	return pdf
+	return &pdf
 }
 
 func AddOneSticker(pdf *gopdf.GoPdf, conf *GenConf, x, y float64, verticalSize float64, addr Addr) {
@@ -187,7 +189,14 @@ func updatePdfData() {
 	pdfBase64Str := base64.StdEncoding.EncodeToString(pdf.GetBytesPdf())
 	pdfHTML.Set("href", fmt.Sprintf("data:application/pdf;name=ds-addr-gen.pdf;base64,%s", pdfBase64Str))
 	pdfHTML.Set("download", fmt.Sprintf("ds-addr-gen.pdf"))
-	pdfHTML.Get("style").Set("display", "block")
+	pdfHTML.Get("style").Set("display", "inline-block")
+
+	previewHTML1 := doc.Call("getElementById", "preview1")
+	previewHTML1.Set("src", fmt.Sprintf("data:application/pdf;base64,%s", pdfBase64Str))
+	previewHTML2 := doc.Call("getElementById", "preview2")
+	previewHTML2.Set("src", fmt.Sprintf("data:application/pdf;base64,%s", pdfBase64Str))
+	// previewHTML := doc.Call("getElementById", "preview1")
+	// previewHTML.Set("data", fmt.Sprintf("data:application/pdf;base64,%s", pdfBase64Str))
 }
 
 func main() {
