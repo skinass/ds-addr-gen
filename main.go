@@ -7,25 +7,33 @@ import (
 	"log"
 	"syscall/js"
 
+	"github.com/creasty/defaults"
 	"github.com/signintech/gopdf"
 	"github.com/skip2/go-qrcode"
 	yaml "gopkg.in/yaml.v3"
 )
 
-const defaultConfig = `sections:
+const defaultConfig = `#описание секций со стеллажами. 
+#для них генерятся адреса для каждой полки на каждом стеллаже.
+sections:
   - zone: "A"
     shelfs: 10
     rows: 6
   - zone: "O"
     shelfs: 12
     rows: 4
+
+#настройки рендеринга.
 render:
-  rows: 6
-  columns: 3
-  font_size: 60
-  qrcode_size: 128
-  orientation: horizontal
-  # orientation: vertical
+  rows: 6 #сколько строк стикеров на одной странице пдф
+  columns: 2 #сколько колонок стикеров на одной странице пдф
+  font_size: 60 #размер текста
+  qrcode_size: 60 #размер qr-кода
+  qrcode_resolution: 256 #качество qr-кода
+  orientation: vertical #настройка листов. портретная(вертикальное расположение) или альбомная(горизонтальное)
+  # orientation: horizontal
+  sticker_left_offset: 10 #насколько стикер делает отступ слева 
+  space_between_qr_and_text: 20 #расстояние между текстом и qr-кодом
 `
 
 type GenConf struct {
@@ -35,16 +43,21 @@ type GenConf struct {
 		Rows   int    `yaml:"rows"`
 	} `yaml:"sections"`
 	Render struct {
-		Rows        int    `yaml:"rows"`
-		Columns     int    `yaml:"columns"`
-		FontSize    int    `yaml:"font_size"`
-		QRCodeSize  int    `yaml:"qrcode_size"`
-		Orientation string `yaml:"orientation"`
+		Rows                  int    `yaml:"rows"`
+		Columns               int    `yaml:"columns"`
+		FontSize              int    `yaml:"font_size" default:"60"`
+		QRCodeSize            int    `yaml:"qrcode_size" default:"60"`
+		QRCodeResolution      int    `yaml:"qrcode_resolution" default:"256"`
+		Orientation           string `yaml:"orientation" default:"vertical"`
+		StickerLeftOffset     int    `yaml:"sticker_left_offest" default:"10"`
+		SpaceBetweenQRAndText int    `yaml:"space_between_qr_and_text" default:"20"`
 	}
 }
 
 func GetGenConf(confRaw []byte) *GenConf {
 	conf := &GenConf{}
+	defaults.Set(conf)
+
 	err := yaml.Unmarshal(confRaw, conf)
 	if err != nil {
 		log.Println(err)
@@ -97,6 +110,8 @@ func CreatePdf(conf *GenConf, addrs []Addr) gopdf.GoPdf {
 		log.Println(err)
 	}
 
+	stickerVerticalSize := H / float64(conf.Render.Rows)
+
 	addrsQueue := addrs
 	cnt := 0
 FillStickersOnPages:
@@ -113,7 +128,7 @@ FillStickersOnPages:
 
 				fmt.Println(currentAddr, i, j)
 				cnt++
-				AddOneSticker(&pdf, conf, i, j, currentAddr)
+				AddOneSticker(&pdf, conf, i, j, stickerVerticalSize, currentAddr)
 			}
 		}
 	}
@@ -122,10 +137,10 @@ FillStickersOnPages:
 	return pdf
 }
 
-func AddOneSticker(pdf *gopdf.GoPdf, conf *GenConf, x, y float64, addr Addr) {
-	const (
-		topOffset  = 5
-		leftOffset = 5
+func AddOneSticker(pdf *gopdf.GoPdf, conf *GenConf, x, y float64, verticalSize float64, addr Addr) {
+	var (
+		topOffset  = (verticalSize - float64(conf.Render.QRCodeSize)) / 2
+		leftOffset = float64(conf.Render.StickerLeftOffset)
 	)
 
 	q, err := qrcode.New(addr.QRCodeData, qrcode.Medium)
@@ -143,9 +158,13 @@ func AddOneSticker(pdf *gopdf.GoPdf, conf *GenConf, x, y float64, addr Addr) {
 		log.Println(err)
 	}
 
-	pdf.ImageByHolder(img, x+leftOffset, y+topOffset, nil)
+	pdf.ImageByHolder(img, x+leftOffset, y+topOffset,
+		&gopdf.Rect{W: float64(conf.Render.QRCodeSize), H: float64(conf.Render.QRCodeSize)},
+	)
 
-	pdf.SetXY(x+leftOffset+80, y+topOffset+10)
+	pdf.SetXY(
+		x+leftOffset+float64(conf.Render.QRCodeSize)+float64(conf.Render.SpaceBetweenQRAndText),
+		y+topOffset+(float64(conf.Render.QRCodeSize)-float64(conf.Render.FontSize)/1.33)/2)
 	pdf.Cell(nil, addr.Text)
 }
 
