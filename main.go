@@ -193,8 +193,8 @@ func updatePdfData() {
 
 	previewHTML1 := doc.Call("getElementById", "preview1")
 	previewHTML1.Set("src", fmt.Sprintf("data:application/pdf;base64,%s", pdfBase64Str))
-	previewHTML2 := doc.Call("getElementById", "preview2")
-	previewHTML2.Set("src", fmt.Sprintf("data:application/pdf;base64,%s", pdfBase64Str))
+	// previewHTML2 := doc.Call("getElementById", "preview2")
+	// previewHTML2.Set("src", fmt.Sprintf("data:application/pdf;base64,%s", pdfBase64Str))
 	// previewHTML := doc.Call("getElementById", "preview1")
 	// previewHTML.Set("data", fmt.Sprintf("data:application/pdf;base64,%s", pdfBase64Str))
 }
