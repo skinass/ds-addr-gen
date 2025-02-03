@@ -101,6 +101,10 @@
         <div class="column">
             <h2>Конфиг для генерации</h2>
             <textarea id="generate_config" placeholder="Введите конфигурацию здесь..."></textarea>
+            <!-- <div id="editor" id="generate_config">function foo(items) {
+                var x = "All this is syntax highlighted";
+                return x;
+            }</div> -->
             <button id="generate_button">Генерировать</button>
             <a id="pdf_download" href="" style="display: none;">Скачать PDF</a>
         </div>
@@ -119,5 +123,17 @@
         </div>
     </div>
 </body>
+
+<script href="
+https://cdn.jsdelivr.net/npm/ace-builds@1.37.5/css/ace.min.css
+" rel="stylesheet"></script>
+<script src="
+https://cdn.jsdelivr.net/npm/ace-builds@1.37.5/src-noconflict/snippets/python.min.js
+"></script>
+<script>
+    var editor = ace.edit("generate_config");
+    editor.setTheme("ace/theme/monokai");
+    editor.session.setMode("ace/mode/javascript");
+</script>
 
 </html>

@@ -77,9 +77,10 @@ func GenAddrList(conf *GenConf) []Addr {
 	for _, section := range conf.Sections {
 		for shelfN := 1; shelfN <= section.Shelfs; shelfN++ {
 			for rowN := 1; rowN <= section.Rows; rowN++ {
+				text := fmt.Sprintf("%s%02d-%d", section.Zone, shelfN, rowN)
 				res = append(res, Addr{
-					QRCodeData: fmt.Sprintf("z=%s s=%02d r=%d", section.Zone, shelfN, rowN),
-					Text:       fmt.Sprintf("%s-%02d-%d", section.Zone, shelfN, rowN),
+					QRCodeData: text,
+					Text:       text,
 				})
 			}
 		}
