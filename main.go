@@ -35,6 +35,8 @@ render:
   # orientation: horizontal
   sticker_left_offset: 10 #насколько стикер делает отступ слева 
   space_between_qr_and_text: 20 #расстояние между текстом и qr-кодом
+  top_bot_offsets: 5
+  left_right_offsets: 5
 `
 
 type GenConf struct {
@@ -52,6 +54,8 @@ type GenConf struct {
 		Orientation           string `yaml:"orientation" default:"vertical"`
 		StickerLeftOffset     int    `yaml:"sticker_left_offset" default:"10"`
 		SpaceBetweenQRAndText int    `yaml:"space_between_qr_and_text" default:"20"`
+		TopBotOffsets         int    `yaml:"top_bot_offsets" default:"0"`
+		LeftRightOffsets      int    `yaml:"left_right_offsets" default:"0"`
 	}
 }
 
@@ -113,16 +117,15 @@ func CreatePdf(conf *GenConf, addrs []Addr) *gopdf.GoPdf {
 		log.Println(err)
 	}
 
-	stickerVerticalSize := H / float64(conf.Render.Rows)
+	stickerVerticalSize := (H - 2*float64(conf.Render.TopBotOffsets)) / float64(conf.Render.Rows)
 
 	addrsQueue := addrs
 	cnt := 0
 FillStickersOnPages:
 	for len(addrsQueue) > 0 {
 		pdf.AddPage()
-		for i := float64(0); i < W; i += W / float64(conf.Render.Columns) {
-			for j := float64(0); j < H; j += H / float64(conf.Render.Rows) {
-
+		for i := float64(conf.Render.LeftRightOffsets); i < W-2*float64(conf.Render.LeftRightOffsets); i += (W - 2*float64(conf.Render.LeftRightOffsets)) / float64(conf.Render.Columns) {
+			for j := float64(conf.Render.TopBotOffsets); j < H-2*float64(conf.Render.TopBotOffsets)-((stickerVerticalSize-float64(conf.Render.QRCodeSize))/2); j += (H - 2*float64(conf.Render.TopBotOffsets)) / float64(conf.Render.Rows) {
 				if len(addrsQueue) == 0 {
 					break FillStickersOnPages
 				}
