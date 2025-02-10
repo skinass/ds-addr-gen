@@ -8,20 +8,28 @@ import (
 	"syscall/js"
 
 	"github.com/creasty/defaults"
+	brace "github.com/kujtimiihoxha/go-brace-expansion"
 	_ "github.com/shurcooL/go-goon"
 	"github.com/signintech/gopdf"
 	"github.com/skip2/go-qrcode"
 	yaml "gopkg.in/yaml.v3"
 )
 
-const defaultConfig = `#описание секций со стеллажами. 
+const defaultConfig = `
+#описание при помощи brace патернов
+#полезно чтоб сгенерить конкретные недостающие этикетки 
+addrs:
+- "Z-{01..02}-{1,3}" #сгенерит Z-01-1,Z-01-3,Z-02-1,Z-02-3
+- "Z-12-4" # сгенерит Z-12-4
+
+#описание секций со стеллажами. 
 #для них генерятся адреса для каждой полки на каждом стеллаже.
 sections:
   - zone: "A"
-    shelfs: 10
-    rows: 6
+    shelfs: 2
+    rows: 3
   - zone: "O"
-    shelfs: 12
+    shelfs: 1
     rows: 4
 
 #настройки рендеринга.
@@ -40,23 +48,27 @@ render:
 `
 
 type GenConf struct {
-	Sections []struct {
-		Zone   string `yaml:"zone"`
-		Shelfs int    `yaml:"shelfs"`
-		Rows   int    `yaml:"rows"`
-	} `yaml:"sections"`
-	Render struct {
-		Rows                  int    `yaml:"rows"`
-		Columns               int    `yaml:"columns"`
-		FontSize              int    `yaml:"font_size" default:"60"`
-		QRCodeSize            int    `yaml:"qrcode_size" default:"60"`
-		QRCodeResolution      int    `yaml:"qrcode_resolution" default:"256"`
-		Orientation           string `yaml:"orientation" default:"vertical"`
-		StickerLeftOffset     int    `yaml:"sticker_left_offset" default:"10"`
-		SpaceBetweenQRAndText int    `yaml:"space_between_qr_and_text" default:"20"`
-		TopBotOffsets         int    `yaml:"top_bot_offsets" default:"0"`
-		LeftRightOffsets      int    `yaml:"left_right_offsets" default:"0"`
-	}
+	Sections GenConfSections `yaml:"sections"`
+	Addrs    []string        `yaml:"addrs"`
+	Render   GenConfRender   `yaml:"render"`
+}
+
+type GenConfSections []struct {
+	Zone   string `yaml:"zone"`
+	Shelfs int    `yaml:"shelfs"`
+	Rows   int    `yaml:"rows"`
+}
+type GenConfRender struct {
+	Rows                  int    `yaml:"rows"`
+	Columns               int    `yaml:"columns"`
+	FontSize              int    `yaml:"font_size" default:"60"`
+	QRCodeSize            int    `yaml:"qrcode_size" default:"60"`
+	QRCodeResolution      int    `yaml:"qrcode_resolution" default:"256"`
+	Orientation           string `yaml:"orientation" default:"vertical"`
+	StickerLeftOffset     int    `yaml:"sticker_left_offset" default:"10"`
+	SpaceBetweenQRAndText int    `yaml:"space_between_qr_and_text" default:"20"`
+	TopBotOffsets         int    `yaml:"top_bot_offsets" default:"0"`
+	LeftRightOffsets      int    `yaml:"left_right_offsets" default:"0"`
 }
 
 func GetGenConf(confRaw []byte) *GenConf {
@@ -76,9 +88,9 @@ type Addr struct {
 	Text       string
 }
 
-func GenAddrList(conf *GenConf) []Addr {
+func GenAddrListFromSections(sections GenConfSections) []Addr {
 	res := []Addr{}
-	for _, section := range conf.Sections {
+	for _, section := range sections {
 		for shelfN := 1; shelfN <= section.Shelfs; shelfN++ {
 			for rowN := 1; rowN <= section.Rows; rowN++ {
 				text := fmt.Sprintf("%s%02d-%d", section.Zone, shelfN, rowN)
@@ -87,6 +99,20 @@ func GenAddrList(conf *GenConf) []Addr {
 					Text:       text,
 				})
 			}
+		}
+	}
+	return res
+}
+
+func GenAddrListFromPatterns(addrs []string) []Addr {
+	res := []Addr{}
+	for _, addrPattern := range addrs {
+		for _, addr := range brace.Expand(addrPattern) {
+			text := addr
+			res = append(res, Addr{
+				QRCodeData: text,
+				Text:       text,
+			})
 		}
 	}
 	return res
@@ -124,8 +150,8 @@ func CreatePdf(conf *GenConf, addrs []Addr) *gopdf.GoPdf {
 FillStickersOnPages:
 	for len(addrsQueue) > 0 {
 		pdf.AddPage()
-		for i := float64(conf.Render.LeftRightOffsets); i < W-2*float64(conf.Render.LeftRightOffsets); i += (W - 2*float64(conf.Render.LeftRightOffsets)) / float64(conf.Render.Columns) {
-			for j := float64(conf.Render.TopBotOffsets); j < H-2*float64(conf.Render.TopBotOffsets)-((stickerVerticalSize-float64(conf.Render.QRCodeSize))/2); j += (H - 2*float64(conf.Render.TopBotOffsets)) / float64(conf.Render.Rows) {
+		for j := float64(conf.Render.TopBotOffsets); j < H-2*float64(conf.Render.TopBotOffsets)-((stickerVerticalSize-float64(conf.Render.QRCodeSize))/2); j += (H - 2*float64(conf.Render.TopBotOffsets)) / float64(conf.Render.Rows) {
+			for i := float64(conf.Render.LeftRightOffsets); i < W-2*float64(conf.Render.LeftRightOffsets); i += (W - 2*float64(conf.Render.LeftRightOffsets)) / float64(conf.Render.Columns) {
 				if len(addrsQueue) == 0 {
 					break FillStickersOnPages
 				}
@@ -186,7 +212,9 @@ func updatePdfData() {
 
 	//generate pdf
 	conf := GetGenConf([]byte(confStr))
-	addrList := GenAddrList(conf)
+	addrList := append(
+		GenAddrListFromPatterns(conf.Addrs),
+		GenAddrListFromSections(conf.Sections)...)
 	pdf := CreatePdf(conf, addrList)
 
 	//update pdf on download link

@@ -1,0 +1,40 @@
+# github.com/creasty/defaults v1.8.0
+## explicit; go 1.14
+github.com/creasty/defaults
+# github.com/kr/pretty v0.1.0
+## explicit
+# github.com/kujtimiihoxha/go-balanced-match v0.0.0-20190729224446-46f5cf369ec1
+## explicit
+github.com/kujtimiihoxha/go-balanced-match
+# github.com/kujtimiihoxha/go-brace-expansion v0.0.0-20190729224542-0df038447e67
+## explicit
+github.com/kujtimiihoxha/go-brace-expansion
+# github.com/phpdave11/gofpdi v1.0.14-0.20211212211723-1f10f9844311
+## explicit; go 1.12
+github.com/phpdave11/gofpdi
+# github.com/pkg/errors v0.9.1
+## explicit
+github.com/pkg/errors
+# github.com/shurcooL/go v0.0.0-20200502201357-93f07166e636
+## explicit
+github.com/shurcooL/go/parserutil
+github.com/shurcooL/go/printerutil
+github.com/shurcooL/go/reflectfind
+github.com/shurcooL/go/reflectsource
+# github.com/shurcooL/go-goon v1.0.0
+## explicit; go 1.17
+github.com/shurcooL/go-goon
+# github.com/signintech/gopdf v0.29.2
+## explicit; go 1.13
+github.com/signintech/gopdf
+github.com/signintech/gopdf/fontmaker/core
+# github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
+## explicit; go 1.13
+github.com/skip2/go-qrcode
+github.com/skip2/go-qrcode/bitset
+github.com/skip2/go-qrcode/reedsolomon
+# gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
+## explicit
+# gopkg.in/yaml.v3 v3.0.1
+## explicit
+gopkg.in/yaml.v3
