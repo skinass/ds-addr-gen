@@ -19,8 +19,8 @@ const defaultConfig = `
 #описание при помощи brace патернов
 #полезно чтоб сгенерить конкретные недостающие этикетки 
 addrs:
-- "Z-{01..02}-{1,3}" #сгенерит Z-01-1,Z-01-3,Z-02-1,Z-02-3
-- "Z-12-4" # сгенерит Z-12-4
+- "Z{01..02}•{1,3}" #сгенерит Z01•1,Z01•3,Z02•1,Z02•3
+- "Z12•4" # сгенерит Z12•4
 
 #описание секций со стеллажами. 
 #для них генерятся адреса для каждой полки на каждом стеллаже.
@@ -93,7 +93,7 @@ func GenAddrListFromSections(sections GenConfSections) []Addr {
 	for _, section := range sections {
 		for shelfN := 1; shelfN <= section.Shelfs; shelfN++ {
 			for rowN := 1; rowN <= section.Rows; rowN++ {
-				text := fmt.Sprintf("%s%02d-%d", section.Zone, shelfN, rowN)
+				text := fmt.Sprintf("%s%02d•%d", section.Zone, shelfN, rowN)
 				res = append(res, Addr{
 					QRCodeData: text,
 					Text:       text,
