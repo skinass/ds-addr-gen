@@ -30,8 +30,8 @@ const defaultConfig = `
 #описание при помощи brace патернов
 #полезно чтоб сгенерить конкретные недостающие этикетки 
 addrs:
-- "Z{01..02}•{1..3}" #сгенерит Z01•1,Z01•3,Z02•1,Z02•3
-- "Z12•4" #сгенерит Z12•4
+- Z{01..02}•{1..3} #сгенерит Z01•1,Z01•3,Z02•1,Z02•3
+- Z12•4 #сгенерит Z12•4
 
 
 
@@ -49,6 +49,7 @@ render:
   space_between_qr_and_text: 20 #расстояние между текстом и qr-кодом
   top_bot_offsets: 5
   left_right_offsets: 5
+  add_stroke: true
 `
 
 type GenConf struct {
@@ -73,6 +74,7 @@ type GenConfRender struct {
 	SpaceBetweenQRAndText int    `yaml:"space_between_qr_and_text" default:"20"`
 	TopBotOffsets         int    `yaml:"top_bot_offsets" default:"0"`
 	LeftRightOffsets      int    `yaml:"left_right_offsets" default:"0"`
+	AddStroke             bool   `yaml:"add_stroke" default:"true"`
 }
 
 func GetGenConf(confRaw []byte) *GenConf {
@@ -169,6 +171,42 @@ FillStickersOnPages:
 				fmt.Println(currentAddr, i, j)
 				cnt++
 				AddOneSticker(&pdf, conf, i, j, stickerVerticalSize, currentAddr)
+
+				if conf.Render.AddStroke {
+					pdf.SetTransparency(gopdf.Transparency{Alpha: 0.5, BlendModeType: gopdf.ColorBurn})
+					pdf.SetLineType("dotted")
+					pdf.SetStrokeColor(0, 0, 0)
+					pdf.SetLineWidth(2)
+					// pdf.Line(
+					// 	i,
+					// 	j,
+					// 	i+(W-2*float64(conf.Render.LeftRightOffsets))/float64(conf.Render.Columns),
+					// 	j,
+					// )
+					if cnt%conf.Render.Columns != 0 {
+						pdf.Line(
+							i+(W-2*float64(conf.Render.LeftRightOffsets))/float64(conf.Render.Columns),
+							j,
+							i+(W-2*float64(conf.Render.LeftRightOffsets))/float64(conf.Render.Columns),
+							j+(H-2*float64(conf.Render.TopBotOffsets))/float64(conf.Render.Rows),
+						)
+					}
+					if (cnt-1)%(conf.Render.Rows*conf.Render.Columns) < (conf.Render.Rows-1)*conf.Render.Columns {
+						pdf.Line(
+							i+(W-2*float64(conf.Render.LeftRightOffsets))/float64(conf.Render.Columns),
+							j+(H-2*float64(conf.Render.TopBotOffsets))/float64(conf.Render.Rows),
+							i,
+							j+(H-2*float64(conf.Render.TopBotOffsets))/float64(conf.Render.Rows),
+						)
+					}
+					// pdf.Line(
+					// 	i,
+					// 	j+(H-2*float64(conf.Render.TopBotOffsets))/float64(conf.Render.Rows),
+					// 	i,
+					// 	j,
+					// )
+					pdf.ClearTransparency()
+				}
 			}
 		}
 	}
