@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"strings"
 	"syscall/js"
 
 	"github.com/creasty/defaults"
@@ -15,22 +16,25 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
+// #описание секций со стеллажами.
+// #для них генерятся адреса для каждой полки на каждом стеллаже.
+// sections:
+//   - zone: "A"
+//     shelfs: 2
+//     rows: 3
+//   - zone: "O"
+//     shelfs: 1
+//     rows: 4
+
 const defaultConfig = `
 #описание при помощи brace патернов
 #полезно чтоб сгенерить конкретные недостающие этикетки 
 addrs:
-- "Z{01..02}•{1,3}" #сгенерит Z01•1,Z01•3,Z02•1,Z02•3
-- "Z12•4" # сгенерит Z12•4
+- "Z{01..02}•{1..3}" #сгенерит Z01•1,Z01•3,Z02•1,Z02•3
+- "Z12•4" #сгенерит Z12•4
 
-#описание секций со стеллажами. 
-#для них генерятся адреса для каждой полки на каждом стеллаже.
-sections:
-  - zone: "A"
-    shelfs: 2
-    rows: 3
-  - zone: "O"
-    shelfs: 1
-    rows: 4
+
+
 
 #настройки рендеринга.
 render:
@@ -88,12 +92,15 @@ type Addr struct {
 	Text       string
 }
 
+var dotReplacer = strings.NewReplacer("-", "•")
+
 func GenAddrListFromSections(sections GenConfSections) []Addr {
 	res := []Addr{}
 	for _, section := range sections {
 		for shelfN := 1; shelfN <= section.Shelfs; shelfN++ {
 			for rowN := 1; rowN <= section.Rows; rowN++ {
 				text := fmt.Sprintf("%s%02d•%d", section.Zone, shelfN, rowN)
+				text = dotReplacer.Replace(text)
 				res = append(res, Addr{
 					QRCodeData: text,
 					Text:       text,
@@ -109,6 +116,7 @@ func GenAddrListFromPatterns(addrs []string) []Addr {
 	for _, addrPattern := range addrs {
 		for _, addr := range brace.Expand(addrPattern) {
 			text := addr
+			text = dotReplacer.Replace(text)
 			res = append(res, Addr{
 				QRCodeData: text,
 				Text:       text,
