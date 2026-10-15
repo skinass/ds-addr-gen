@@ -126,6 +126,7 @@ func GenAddrListFromPatterns(addrs []string) []Addr {
 		}
 	}
 	return res
+
 }
 
 //go:embed arial/ARIAL.TTF
